@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\SocialAuthController;
 
 // Ruta principal de la aplicación
 Route::get('/', function () {
@@ -28,6 +29,8 @@ Route::middleware('auth')->post('logout', [AuthenticatedSessionController::class
 
 // Incluir las rutas adicionales de autenticación generadas por Laravel Breeze
 
+Route::get('auth/linkedin', [SocialAuthController::class, 'redirectToProvider']);
+Route::get('auth/linkedin/callback', [SocialAuthController::class, 'handleProviderCallback']);
 
 
 

@@ -11,6 +11,8 @@
                 <div class="p-6 text-gray-900 dark:text-gray-100">
                     {{ __("¡Has iniciado sesión!") }}
                 </div>
+                <a href="{{ url('auth/linkedin') }}">Conectar con LinkedIn</a>
+
             </div>
         </div>
     </div>

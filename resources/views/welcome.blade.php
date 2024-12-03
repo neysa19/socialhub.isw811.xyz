@@ -34,6 +34,8 @@
             <main class="p-6">
                 <h2 class="text-2xl font-bold">Bienvenido a Social Hub Manager</h2>
                 <p>Gestiona tus redes sociales desde una sola aplicación.</p>
+              
+
             </main>
 
             <footer class="text-center p-4 bg-gray-800 text-white">
