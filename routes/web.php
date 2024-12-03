@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\SocialAuthController;
+use App\Http\Controllers\ProfileController;
 
 // Ruta principal de la aplicación
 Route::get('/', function () {
@@ -21,6 +22,7 @@ Route::post('login', [AuthenticatedSessionController::class, 'store']);
 
 Route::get('/forgot-password', [AuthenticatedSessionController::class, 'showLinkRequestForm'])->name('password.request');
 
+Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
 
 Route::get('register', [RegisteredUserController::class, 'create'])->name('register');
 Route::post('register', [RegisteredUserController::class, 'store']);
@@ -29,9 +31,7 @@ Route::middleware('auth')->post('logout', [AuthenticatedSessionController::class
 
 // Incluir las rutas adicionales de autenticación generadas por Laravel Breeze
 
-Route::get('auth/linkedin', [SocialAuthController::class, 'redirectToProvider']);
-Route::get('auth/linkedin/callback', [SocialAuthController::class, 'handleProviderCallback']);
-
-
+Route::get('/auth/linkedin', [SocialAuthController::class, 'redirectToProvider'])->name('linkedin.login');
+Route::get('/auth/linkedin/callback', [SocialAuthController::class, 'handleProviderCallback']);
 
 require __DIR__.'/auth.php';
