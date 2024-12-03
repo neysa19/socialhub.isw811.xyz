@@ -6,35 +6,49 @@ use Illuminate\Http\Request;
 use Laravel\Socialite\Facades\Socialite;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use SocialiteProviders\Manager\Config;
+
 
 class SocialAuthController extends Controller
 {
-    public function redirectToProvider()
+    public function redirectToLinkedIn()
     {
-    
-        return Socialite::driver('linkedin')->redirect();
+        return Socialite::buildProvider(
+            \SocialiteProviders\LinkedIn\Provider::class,
+            new Config(
+                config('services.linkedin.client_id'),
+                config('services.linkedin.client_secret'),
+                config('services.linkedin.redirect')
+            )
+        )
+        ->scopes(['r_liteprofile', 'r_emailaddress', 'w_member_social']) // Scopes necesarios
+        ->redirect();
     }
 
     public function handleProviderCallback()
     {
         try {
-        $linkedinUser = Socialite::driver('linkedin')->user();
+            $linkedinUser = Socialite::driver('linkedin')->user();
+            $user = User::where('email', $linkedinUser->email)->first();
 
-        // Lógica para enlazar o registrar al usuario
-        $user = User::updateOrCreate(
-            ['linkedin_id' => $linkedinUser->id],
-            [
-                'name' => $linkedinUser->name,
-                'email' => $linkedinUser->email,
-                'linkedin_token' => $linkedinUser->token,
+            if ($user) {
+                // Actualizar información del usuario si es necesario
+            } else {
+                // Crear un nuevo usuario
+                $user = User::create([
+                    'name' => $linkedinUser->name,
+                    'email' => $linkedinUser->email,
+                    'linkedin_token' => $linkedinUser->token,
                 'linkedin_refresh_token' => $linkedinUser->refreshToken ?? null,
-            ]
-        );
-    } catch (\Exception $e) {
-        return redirect('/')->with('error', 'Error al conectar con LinkedIn.');
-    }
-        Auth::login($user);
+                    // Otros campos necesarios
+                ]);
+            }
 
-        return redirect('/dashboard')->with('success', 'Cuenta de LinkedIn conectada exitosamente.');
-    }
+            Auth::login($user);
+            return redirect()->intended('/dashboard');
+        } catch (\Exception $e) {
+            // Manejo de errores
+            return redirect('/login')->withErrors(['msg' => 'Error al autenticar con LinkedIn.']);
+        }
+}
 }

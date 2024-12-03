@@ -31,7 +31,7 @@ Route::middleware('auth')->post('logout', [AuthenticatedSessionController::class
 
 // Incluir las rutas adicionales de autenticación generadas por Laravel Breeze
 
-Route::get('/auth/linkedin', [SocialAuthController::class, 'redirectToProvider'])->name('linkedin.login');
-Route::get('/auth/linkedin/callback', [SocialAuthController::class, 'handleProviderCallback']);
+Route::get('auth/linkedin', [SocialAuthController::class, 'redirectToLinkedIn']);
+Route::get('auth/linkedin/callback', [SocialAuthController::class, 'handleLinkedInCallback']);
 
 require __DIR__.'/auth.php';
