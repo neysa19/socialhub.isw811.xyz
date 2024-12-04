@@ -6,15 +6,12 @@
 
     <title>{{ config('app.name', 'SocialHub') }}</title>
 
-    <!-- Styles -->
-    <link href="{{ asset('css/app.css') }}" rel="stylesheet">
-
-    <!-- Scripts -->
-    @vite(['resources/js/app.js'])
+    <!-- Incluye el archivo CSS generado por Vite -->
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="font-sans antialiased">
     <div class="min-h-screen bg-gray-100 dark:bg-gray-900">
-        
+
         <!-- Navbar -->
         <x-navbar></x-navbar>
 

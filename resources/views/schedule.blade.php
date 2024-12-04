@@ -1,3 +1,6 @@
+<!-- Inserta los archivos CSS y JS compilados -->
+@vite(['resources/css/app.css', 'resources/js/app.js'])
+
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
@@ -52,14 +55,4 @@
                             <td class="border px-4 py-2">Lunes</td>
                             <td class="border px-4 py-2">08:00, 18:00</td>
                             <td class="border px-4 py-2">
-                                <button class="bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-3 rounded">
-                                    Eliminar
-                                </button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-</x-app-layout>
+                                <button class="bg-red-
