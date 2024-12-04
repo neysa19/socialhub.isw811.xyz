@@ -11,6 +11,7 @@ use App\Http\Controllers\InstagramController;
 use App\Http\Controllers\PublicationController;
 use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\QueueController;
+use App\Http\Controllers\TwoFactorController;
 
 // Ruta principal de la aplicación
 Route::get('/', function () {
@@ -23,15 +24,19 @@ Route::get('/dashboard', function () {
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 // Rutas de autenticación de usuario generadas por Laravel Breeze
-Route::get('login', [AuthenticatedSessionController::class, 'create'])->name('login');
-Route::post('login', [AuthenticatedSessionController::class, 'store']);
+Route::middleware('guest')->group(function () {
+    Route::get('login', [AuthenticatedSessionController::class, 'create'])->name('login');
+    Route::post('login', [AuthenticatedSessionController::class, 'store']);
+    Route::get('register', [RegisteredUserController::class, 'create'])->name('register');
+    Route::post('register', [RegisteredUserController::class, 'store']);
+});
+
 
 Route::get('/forgot-password', [AuthenticatedSessionController::class, 'showLinkRequestForm'])->name('password.request');
 
 Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.show');
 
-Route::get('register', [RegisteredUserController::class, 'create'])->name('register');
-Route::post('register', [RegisteredUserController::class, 'store']);
+
 
 Route::middleware('auth')->post('logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 
@@ -81,6 +86,23 @@ Route::middleware(['auth'])->group(function () {
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/queue', [QueueController::class, 'index'])->name('queue.index');
+});
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/2fa/enable', [TwoFactorController::class, 'enableTwoFactor'])->name('2fa.enable');
+    Route::post('/2fa/verify', [TwoFactorController::class, 'verifyTwoFactor'])->name('2fa.verify');
+});
+
+Route::middleware(['auth', '2fa'])->group(function () {
+    Route::get('/dashboard', function () {
+        return view('dashboard');
+    })->name('dashboard');
+});
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/dashboard', function () {
+        return view('dashboard');
+    })->name('dashboard');
 });
 
 require __DIR__.'/auth.php';
