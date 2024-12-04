@@ -39,7 +39,7 @@
             </main>
 
             <footer class="text-center p-4 bg-gray-800 text-white">
-                Laravel v{{ Illuminate\Foundation\Application::VERSION }} (PHP v{{ PHP_VERSION }})
+                
             </footer>
         </div>
     </body>

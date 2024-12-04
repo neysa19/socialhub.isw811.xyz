@@ -8,6 +8,9 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TwitterController;
 use App\Http\Controllers\FacebookController;
 use App\Http\Controllers\InstagramController;
+use App\Http\Controllers\PublicationController;
+use App\Http\Controllers\ScheduleController;
+use App\Http\Controllers\QueueController;
 
 // Ruta principal de la aplicación
 Route::get('/', function () {
@@ -51,5 +54,22 @@ Route::get('/instagram/connect', [InstagramController::class, 'connectInstagram'
 Route::get('/instagram/callback', [InstagramController::class, 'handleInstagramCallback'])->name('instagram.callback');
 Route::post('/instagram/post', [InstagramController::class, 'postToInstagram'])->name('instagram.post');
 
+Route::middleware(['auth'])->group(function () {
 
+    // Rutas para publicaciones de entradas
+    Route::get('/publications', [PublicationController::class, 'index'])->name('publications.index');
+    Route::post('/publications', [PublicationController::class, 'store'])->name('publications.store');
+
+    // Rutas para los horarios de publicación
+    Route::get('/schedules', [ScheduleController::class, 'index'])->name('schedules.index');
+    Route::post('/schedules', [ScheduleController::class, 'store'])->name('schedules.store');
+    Route::delete('/schedules/{schedule}', [ScheduleController::class, 'destroy'])->name('schedules.destroy');
+
+    // Rutas para la cola de publicaciones
+    Route::get('/queue', [QueueController::class, 'index'])->name('queue.index');
+});
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
+});
 require __DIR__.'/auth.php';
