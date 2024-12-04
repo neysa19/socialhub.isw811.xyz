@@ -65,11 +65,22 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/schedules', [ScheduleController::class, 'store'])->name('schedules.store');
     Route::delete('/schedules/{schedule}', [ScheduleController::class, 'destroy'])->name('schedules.destroy');
 
-    // Rutas para la cola de publicaciones
-    Route::get('/queue', [QueueController::class, 'index'])->name('queue.index');
+    
 });
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
+    Route::get('/schedules', [ScheduleController::class, 'index'])->name('schedules.index');
+    // Otras rutas protegidas...
 });
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/publications', [PublicationController::class, 'index'])->name('publications.index');
+
+});
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/queue', [QueueController::class, 'index'])->name('queue.index');
+});
+
 require __DIR__.'/auth.php';
