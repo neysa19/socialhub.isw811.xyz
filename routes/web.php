@@ -34,7 +34,7 @@ Route::middleware('guest')->group(function () {
 
 Route::get('/forgot-password', [AuthenticatedSessionController::class, 'showLinkRequestForm'])->name('password.request');
 
-Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.show');
+Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
 
 
 
