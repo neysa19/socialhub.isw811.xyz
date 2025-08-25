@@ -11,7 +11,6 @@ use App\Http\Controllers\InstagramController;
 use App\Http\Controllers\PublicationController;
 use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\QueueController;
-use App\Http\Controllers\TwoFactorController;
 
 // Ruta principal de la aplicación
 Route::get('/', function () {
@@ -24,19 +23,15 @@ Route::get('/dashboard', function () {
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 // Rutas de autenticación de usuario generadas por Laravel Breeze
-Route::middleware('guest')->group(function () {
-    Route::get('login', [AuthenticatedSessionController::class, 'create'])->name('login');
-    Route::post('login', [AuthenticatedSessionController::class, 'store']);
-    Route::get('register', [RegisteredUserController::class, 'create'])->name('register');
-    Route::post('register', [RegisteredUserController::class, 'store']);
-});
-
+Route::get('login', [AuthenticatedSessionController::class, 'create'])->name('login');
+Route::post('login', [AuthenticatedSessionController::class, 'store']);
 
 Route::get('/forgot-password', [AuthenticatedSessionController::class, 'showLinkRequestForm'])->name('password.request');
 
 Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
 
-
+Route::get('register', [RegisteredUserController::class, 'create'])->name('register');
+Route::post('register', [RegisteredUserController::class, 'store']);
 
 Route::middleware('auth')->post('logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 
@@ -72,10 +67,6 @@ Route::middleware(['auth'])->group(function () {
 
     // Rutas para la cola de publicaciones
     Route::get('/queue', [QueueController::class, 'index'])->name('queue.index');
-});
-
-Route::middleware(['auth'])->group(function () {
-    Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
 });
 
 require __DIR__.'/auth.php';

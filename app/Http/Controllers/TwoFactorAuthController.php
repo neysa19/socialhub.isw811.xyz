@@ -3,48 +3,48 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use PragmaRX\Google2FA\Google2FA;
+use Illuminate\Support\Facades\Auth;
+use App\Models\User;
 
-class TwoFactorController extends Controller
+class TwoFactorAuthController extends Controller
 {
-    public function enableTwoFactor()
+    public function setup2FA()
     {
-        $user = Auth::user();
         $google2fa = new Google2FA();
+        $user = Auth::user();
+        
+        if (!$user || !$user instanceof User) {
+            return back()->withErrors(['error' => 'User is not authenticated or invalid.']);
+        }
+        if ($user && !$user->google2fa_secret) {
+            $user->google2fa_secret = $google2fa->generateSecretKey();
+            $user->save();
+        }
 
-        // Generar clave secreta
-        $secretKey = $google2fa->generateSecretKey();
-        $user->google2fa_secret = $secretKey;
-        $user->save();
+        if (!$user) {
+            return back()->withErrors(['error' => 'User is not authenticated.']);
+        }
 
-        // URL del QR para la app de Google Authenticator
-        $QRImage = $google2fa->getQRCodeInline(
+        $qrCodeUrl = $google2fa->getQRCodeUrl(
             config('app.name'),
             $user->email,
             $user->google2fa_secret
         );
 
-        return view('2fa.enable', compact('user', 'QRImage'));
+        return view('auth.2fa', ['qrCodeUrl' => $qrCodeUrl]);
     }
 
-    public function verifyTwoFactor(Request $request)
+    public function verifyOTP(Request $request)
     {
-        $user = Auth::user();
         $google2fa = new Google2FA();
+        $user = Auth::user();
 
-        $request->validate([
-            'one_time_password' => 'required|numeric',
-        ]);
-
-        $valid = $google2fa->verifyKey($user->google2fa_secret, $request->one_time_password);
-
-        if ($valid) {
-            // Confirmación exitosa del 2FA
-            session(['two_factor_authenticated' => true]);
-            return redirect()->route('dashboard')->with('status', 'Autenticación 2FA habilitada correctamente.');
+        if ($user && $google2fa->verifyKey($user->google2fa_secret, $request->input('otp'))) {
+            session(['2fa_verified' => true]);
+            return redirect('/dashboard');
         }
 
-        return back()->withErrors(['one_time_password' => 'El código proporcionado no es válido.']);
+        return back()->withErrors(['otp' => 'Invalid OTP.']);
     }
 }
