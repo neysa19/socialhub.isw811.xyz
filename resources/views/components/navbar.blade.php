@@ -61,22 +61,3 @@
         </div>
     </div>
 </nav>
-
-<!-- Script para manejar el menú desplegable -->
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const dropdownButton = document.getElementById('dropdownButton');
-        const dropdownMenu = document.getElementById('dropdownMenu');
-
-        dropdownButton.addEventListener('click', function () {
-            dropdownMenu.classList.toggle('hidden');
-        });
-
-        // Cierra el menú si se hace clic fuera de él
-        window.addEventListener('click', function (e) {
-            if (!dropdownButton.contains(e.target) && !dropdownMenu.contains(e.target)) {
-                dropdownMenu.classList.add('hidden');
-            }
-        });
-    });
-</script>

@@ -70,39 +70,12 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/schedules', [ScheduleController::class, 'store'])->name('schedules.store');
     Route::delete('/schedules/{schedule}', [ScheduleController::class, 'destroy'])->name('schedules.destroy');
 
-    
-});
-
-Route::middleware(['auth'])->group(function () {
-    Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
-    Route::get('/schedules', [ScheduleController::class, 'index'])->name('schedules.index');
-    // Otras rutas protegidas...
-});
-
-Route::middleware(['auth'])->group(function () {
-    Route::get('/publications', [PublicationController::class, 'index'])->name('publications.index');
-
-});
-
-Route::middleware(['auth'])->group(function () {
+    // Rutas para la cola de publicaciones
     Route::get('/queue', [QueueController::class, 'index'])->name('queue.index');
 });
 
 Route::middleware(['auth'])->group(function () {
-    Route::get('/2fa/enable', [TwoFactorController::class, 'enableTwoFactor'])->name('2fa.enable');
-    Route::post('/2fa/verify', [TwoFactorController::class, 'verifyTwoFactor'])->name('2fa.verify');
-});
-
-Route::middleware(['auth', '2fa'])->group(function () {
-    Route::get('/dashboard', function () {
-        return view('dashboard');
-    })->name('dashboard');
-});
-
-Route::middleware(['auth'])->group(function () {
-    Route::get('/dashboard', function () {
-        return view('dashboard');
-    })->name('dashboard');
+    Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
 });
 
 require __DIR__.'/auth.php';
