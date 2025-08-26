@@ -40,60 +40,66 @@ class TwitterOAuth2Controller extends Controller
     }
 
     public function callback(Request $request)
-    {
-        $state = Session::pull('tw_state');
-        $verifier = Session::pull('tw_code_verifier');
+{
+    $state = Session::pull('tw_state');
+    $verifier = Session::pull('tw_code_verifier');
 
-        if (!$state || $state !== $request->get('state')) {
-            return redirect()->route('publications.index')->withErrors('Estado OAuth inválido.');
-        }
-        if (!$request->has('code')) {
-            return redirect()->route('publications.index')->withErrors('No se recibió código de autorización.');
-        }
-
-        // Intercambiar code -> tokens
-        $tokenRes = Http::asForm()->post('https://api.twitter.com/2/oauth2/token', [
-            'client_id'     => env('TWITTER_CLIENT_ID'),
-            'client_secret' => env('TWITTER_CLIENT_SECRET'),
-            'grant_type'    => 'authorization_code',
-            'code'          => $request->get('code'),
-            'redirect_uri'  => env('TWITTER_REDIRECT_URI'),
-            'code_verifier' => $verifier,
-        ]);
-
-        if (!$tokenRes->successful()) {
-            return redirect()->route('publications.index')->withErrors('No se pudo obtener token: '.$tokenRes->body());
-        }
-
-        $tok = $tokenRes->json(); // access_token, refresh_token, expires_in, scope, token_type
-
-        // Obtener el perfil del usuario autenticado
-        $meRes = Http::withToken($tok['access_token'])
-            ->get('https://api.twitter.com/2/users/me');
-        if (!$meRes->successful()) {
-            return redirect()->route('publications.index')->withErrors('No se pudo leer el perfil: '.$meRes->body());
-        }
-        $me = $meRes->json('data'); // id, name, username
-
-        // Guardar en social_accounts
-        SocialAccount::updateOrCreate(
-            ['user_id' => Auth::id(), 'provider' => 'twitter'],
-            [
-                'provider_user_id' => $me['id'] ?? null,
-                'access_token'     => json_encode([
-                    'access_token'  => $tok['access_token'],
-                    'refresh_token' => $tok['refresh_token'] ?? null,
-                    'scope'         => $tok['scope'] ?? null,
-                ]),
-                'refresh_token'   => $tok['refresh_token'] ?? null, // opcional duplicado
-                'token_expires_at'=> Carbon::now()->addSeconds((int)($tok['expires_in'] ?? 7200)),
-                'scopes'          => $tok['scope'] ?? null,
-                'meta'            => json_encode(['username' => $me['username'] ?? null, 'name' => $me['name'] ?? null]),
-            ]
-        );
-
-        return redirect()->route('publications.index')->with('ok', 'Cuenta de X conectada correctamente.');
+    // Si usuario cancela o hay mismatch, regresa a la app
+    if (!$state || $state !== $request->get('state')) {
+        return redirect()->route('publications.index')
+            ->withErrors('Conexión a X cancelada o inválida (state mismatch).');
     }
+    if (!$request->has('code')) {
+        return redirect()->route('publications.index')
+            ->withErrors('No se recibió el código de autorización de X.');
+    }
+
+    // Intercambiar code -> tokens
+    $tokenRes = Http::asForm()->post('https://api.twitter.com/2/oauth2/token', [
+        'client_id'     => env('TWITTER_CLIENT_ID'),
+        'client_secret' => env('TWITTER_CLIENT_SECRET'),
+        'grant_type'    => 'authorization_code',
+        'code'          => $request->get('code'),
+        'redirect_uri'  => env('TWITTER_REDIRECT_URI'),
+        'code_verifier' => $verifier,
+    ]);
+
+    if (!$tokenRes->successful()) {
+        return redirect()->route('publications.index')
+            ->withErrors('No se pudo obtener token de X: '.$tokenRes->body());
+    }
+
+    $tok = $tokenRes->json();
+
+    // Leer perfil para guardar el id
+    $meRes = Http::withToken($tok['access_token'])->get('https://api.twitter.com/2/users/me');
+    if (!$meRes->successful()) {
+        return redirect()->route('publications.index')
+            ->withErrors('No se pudo leer el perfil de X: '.$meRes->body());
+    }
+    $me = $meRes->json('data');
+
+    // Guardar social_accounts
+    \App\Models\SocialAccount::updateOrCreate(
+        ['user_id' => Auth::id(), 'provider' => 'twitter'],
+        [
+            'provider_user_id' => $me['id'] ?? null,
+            'access_token'     => json_encode([
+                'access_token'  => $tok['access_token'],
+                'refresh_token' => $tok['refresh_token'] ?? null,
+                'scope'         => $tok['scope'] ?? null,
+            ]),
+            'refresh_token'    => $tok['refresh_token'] ?? null,
+            'token_expires_at' => now()->addSeconds((int)($tok['expires_in'] ?? 7200)),
+            'scopes'           => $tok['scope'] ?? null,
+            'meta'             => json_encode(['username'=>$me['username'] ?? null,'name'=>$me['name'] ?? null]),
+        ]
+    );
+
+    // ¡SIEMPRE! regresar a tu app con mensaje
+    return redirect()->route('publications.index')->with('ok', 'Cuenta de X conectada.');
+}
+
 
     public function disconnect()
     {

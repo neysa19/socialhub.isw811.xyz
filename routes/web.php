@@ -12,6 +12,8 @@ use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\QueueController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\TwitterOAuth2Controller;
+use Illuminate\Support\Facades\Auth;
+use App\Models\SocialAccount;
 
 
 // Ruta principal de la aplicación
@@ -41,15 +43,21 @@ Route::post('register', [RegisteredUserController::class, 'store']);
 Route::middleware('auth')->post('logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 
 // Incluir las rutas adicionales de autenticación generadas por Laravel Breeze
+// Conexión con LinkedIn (usando tu SocialAuthController)
+    Route::get('/auth/linkedin',               [SocialAuthController::class, 'redirectToLinkedIn'])->name('linkedin.redirect');
+    Route::get('/auth/linkedin/callback',      [SocialAuthController::class, 'handleLinkedInCallback'])->name('linkedin.callback');
+    Route::delete('/auth/linkedin/disconnect', [SocialAuthController::class, 'disconnectLinkedIn'])->name('linkedin.disconnect');
 
-Route::get('auth/linkedin', [SocialAuthController::class, 'redirectToLinkedIn']);
-Route::get('auth/linkedin/callback', [SocialAuthController::class, 'handleLinkedInCallback']);
 
+Route::get('/dashboard', function () {
+    $userId = Auth::id(); 
+    $hasTw  = SocialAccount::where('user_id', $userId)->where('provider', 'twitter')->exists();
+    $hasLi  = SocialAccount::where('user_id', $userId)->where('provider', 'linkedin')->exists();
 
-Route::middleware(['auth'])->group(function () {
-    Route::get('/publications', [PostController::class, 'index'])->name('publications.index');
-    Route::post('/publications', [PostController::class, 'store'])->name('publications.store');
+    return view('dashboard', compact('hasTw', 'hasLi'));
+})->middleware(['auth','verified'])->name('dashboard');
 
+Route::middleware('auth')->group(function () {
     Route::get('/oauth/twitter/redirect', [TwitterOAuth2Controller::class, 'redirect'])->name('twitter.redirect');
     Route::get('/oauth/twitter/callback', [TwitterOAuth2Controller::class, 'callback'])->name('twitter.callback');
     Route::delete('/oauth/twitter/disconnect', [TwitterOAuth2Controller::class, 'disconnect'])->name('twitter.disconnect');
@@ -68,9 +76,10 @@ Route::post('/instagram/post', [InstagramController::class, 'postToInstagram'])-
 
 Route::middleware(['auth'])->group(function () {
 
-    // Rutas para publicaciones de entradas
-    Route::get('/publications', [PublicationController::class, 'index'])->name('publications.index');
-    Route::post('/publications', [PublicationController::class, 'store'])->name('publications.store');
+    // Publicaciones (usar PostController)
+    Route::get('/publications',  [PostController::class, 'index'])->name('publications.index');
+    Route::post('/publications', [PostController::class, 'store'])->name('publications.store');
+
 
     // Rutas para los horarios de publicación
     Route::get('/schedules', [ScheduleController::class, 'index'])->name('schedules.index');

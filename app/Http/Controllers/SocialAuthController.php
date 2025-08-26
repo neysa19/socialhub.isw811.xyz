@@ -21,8 +21,8 @@ class SocialAuthController extends Controller
                 config('services.linkedin.redirect')
             )
         )
-        ->scopes(['r_liteprofile', 'r_emailaddress', 'w_member_social']) // Scopes necesarios
-        ->redirect();
+            ->scopes(['r_liteprofile', 'r_emailaddress', 'w_member_social']) // Scopes necesarios
+            ->redirect();
     }
 
     public function handleProviderCallback()
@@ -39,7 +39,7 @@ class SocialAuthController extends Controller
                     'name' => $linkedinUser->name,
                     'email' => $linkedinUser->email,
                     'linkedin_token' => $linkedinUser->token,
-                'linkedin_refresh_token' => $linkedinUser->refreshToken ?? null,
+                    'linkedin_refresh_token' => $linkedinUser->refreshToken ?? null,
                     // Otros campos necesarios
                 ]);
             }
@@ -50,5 +50,13 @@ class SocialAuthController extends Controller
             // Manejo de errores
             return redirect('/login')->withErrors(['msg' => 'Error al autenticar con LinkedIn.']);
         }
-}
+    }
+    public function disconnectLinkedIn()
+    {
+        \App\Models\SocialAccount::where('user_id', \Illuminate\Support\Facades\Auth::id())
+            ->where('provider', 'linkedin')
+            ->delete();
+
+        return back()->with('ok', 'LinkedIn desconectado.');
+    }
 }
