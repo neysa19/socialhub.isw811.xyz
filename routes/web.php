@@ -5,12 +5,14 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\SocialAuthController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\TwitterController;
 use App\Http\Controllers\FacebookController;
 use App\Http\Controllers\InstagramController;
 use App\Http\Controllers\PublicationController;
 use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\QueueController;
+use App\Http\Controllers\PostController;
+use App\Http\Controllers\TwitterOAuth2Controller;
+
 
 // Ruta principal de la aplicación
 Route::get('/', function () {
@@ -43,9 +45,16 @@ Route::middleware('auth')->post('logout', [AuthenticatedSessionController::class
 Route::get('auth/linkedin', [SocialAuthController::class, 'redirectToLinkedIn']);
 Route::get('auth/linkedin/callback', [SocialAuthController::class, 'handleLinkedInCallback']);
 
-Route::get('/twitter/connect', [TwitterController::class, 'connectTwitter'])->name('twitter.connect');
-Route::get('/twitter/callback', [TwitterController::class, 'handleTwitterCallback'])->name('twitter.callback');
-Route::post('/twitter/post', [TwitterController::class, 'postTweet'])->name('twitter.post');
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/publications', [PostController::class, 'index'])->name('publications.index');
+    Route::post('/publications', [PostController::class, 'store'])->name('publications.store');
+
+    Route::get('/oauth/twitter/redirect', [TwitterOAuth2Controller::class, 'redirect'])->name('twitter.redirect');
+    Route::get('/oauth/twitter/callback', [TwitterOAuth2Controller::class, 'callback'])->name('twitter.callback');
+    Route::delete('/oauth/twitter/disconnect', [TwitterOAuth2Controller::class, 'disconnect'])->name('twitter.disconnect');
+});
+
 
 // Facebook routes
 Route::get('/facebook/connect', [FacebookController::class, 'connectFacebook'])->name('facebook.connect');
