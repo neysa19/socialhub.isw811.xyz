@@ -23,11 +23,17 @@
                 </div>
             </header>
         @endif
-
+  @yield('header')
         <!-- Page Content -->
-        <main>
-            {{ $slot }}
-        </main>
+       <main>
+    @isset($slot)
+        {{-- Estilo componente (Jetstream) --}}
+        {{ $slot }}
+    @else
+        {{-- Estilo secciones (Breeze / @extends) --}}
+        @yield('content')
+    @endisset
+</main>
     </div>
 </body>
 </html>

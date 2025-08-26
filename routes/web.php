@@ -28,7 +28,10 @@ Route::post('login', [AuthenticatedSessionController::class, 'store']);
 
 Route::get('/forgot-password', [AuthenticatedSessionController::class, 'showLinkRequestForm'])->name('password.request');
 
+Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.show');
 Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
+Route::get('/profile/update', [ProfileController::class, 'update'])->name('profile.update');
+Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
 Route::get('register', [RegisteredUserController::class, 'create'])->name('register');
 Route::post('register', [RegisteredUserController::class, 'store']);
@@ -66,6 +69,20 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/schedules/{schedule}', [ScheduleController::class, 'destroy'])->name('schedules.destroy');
 
     // Rutas para la cola de publicaciones
+    Route::get('/queue', [QueueController::class, 'index'])->name('queue.index');
+});
+Route::middleware(['auth'])->group(function () {
+    Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
+    Route::get('/schedules', [ScheduleController::class, 'index'])->name('schedules.index');
+    // Otras rutas protegidas...
+});
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/publications', [PublicationController::class, 'index'])->name('publications.index');
+
+});
+
+Route::middleware(['auth'])->group(function () {
     Route::get('/queue', [QueueController::class, 'index'])->name('queue.index');
 });
 
