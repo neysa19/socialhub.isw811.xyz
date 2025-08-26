@@ -44,23 +44,28 @@ Route::middleware('auth')->post('logout', [AuthenticatedSessionController::class
 
 // Incluir las rutas adicionales de autenticación generadas por Laravel Breeze
 // Conexión con LinkedIn (usando tu SocialAuthController)
-    Route::get('/auth/linkedin',               [SocialAuthController::class, 'redirectToLinkedIn'])->name('linkedin.redirect');
-    Route::get('/auth/linkedin/callback',      [SocialAuthController::class, 'handleLinkedInCallback'])->name('linkedin.callback');
-    Route::delete('/auth/linkedin/disconnect', [SocialAuthController::class, 'disconnectLinkedIn'])->name('linkedin.disconnect');
+Route::get('/auth/linkedin',               [SocialAuthController::class, 'redirectToLinkedIn'])->name('linkedin.redirect');
+Route::get('/auth/linkedin/callback',      [SocialAuthController::class, 'handleLinkedInCallback'])->name('linkedin.callback');
+Route::delete('/auth/linkedin/disconnect', [SocialAuthController::class, 'disconnectLinkedIn'])->name('linkedin.disconnect');
 
 
 Route::get('/dashboard', function () {
-    $userId = Auth::id(); 
+    $userId = Auth::id();
     $hasTw  = SocialAccount::where('user_id', $userId)->where('provider', 'twitter')->exists();
     $hasLi  = SocialAccount::where('user_id', $userId)->where('provider', 'linkedin')->exists();
 
     return view('dashboard', compact('hasTw', 'hasLi'));
-})->middleware(['auth','verified'])->name('dashboard');
+})->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
-    Route::get('/oauth/twitter/redirect', [TwitterOAuth2Controller::class, 'redirect'])->name('twitter.redirect');
-    Route::get('/oauth/twitter/callback', [TwitterOAuth2Controller::class, 'callback'])->name('twitter.callback');
-    Route::delete('/oauth/twitter/disconnect', [TwitterOAuth2Controller::class, 'disconnect'])->name('twitter.disconnect');
+    Route::get('/oauth/twitter/redirect', [TwitterOAuth2Controller::class, 'redirect'])
+        ->name('twitter.redirect');
+
+    Route::get('/oauth/twitter/callback', [TwitterOAuth2Controller::class, 'callback'])
+        ->name('twitter.callback');
+
+    Route::delete('/oauth/twitter/disconnect', [TwitterOAuth2Controller::class, 'disconnect'])
+        ->name('twitter.disconnect');
 });
 
 
@@ -97,11 +102,10 @@ Route::middleware(['auth'])->group(function () {
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/publications', [PublicationController::class, 'index'])->name('publications.index');
-
 });
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/queue', [QueueController::class, 'index'])->name('queue.index');
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

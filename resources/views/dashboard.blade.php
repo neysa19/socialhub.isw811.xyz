@@ -32,6 +32,14 @@
       Conectar con X
     </a>
   @endif
+  @if (session('status'))
+  <div class="bg-green-600 text-white px-3 py-2 rounded mb-3">{{ session('status') }}</div>
+@endif
+
+@if (session('error'))
+  <div class="bg-red-600 text-white px-3 py-2 rounded mb-3">{{ session('error') }}</div>
+@endif
+
 
   {{-- LinkedIn --}}
   @if ($hasLi)
