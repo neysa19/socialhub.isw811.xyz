@@ -8,13 +8,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Publication extends Model
 {
     protected $fillable = [
-        'user_id','title','content','image_path',
-        'mode','scheduled_at','status','meta',
+        'user_id','title','content','image_path','mode',
+        'scheduled_at','status','error',
     ];
 
     protected $casts = [
         'scheduled_at' => 'datetime',
-        'meta'         => 'array',
     ];
 
     public function targets(): HasMany

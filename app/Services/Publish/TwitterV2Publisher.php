@@ -1,47 +1,38 @@
 <?php
+
 namespace App\Services\Publish;
 
-use App\Models\Publication;
-use App\Models\PostTarget;
 use App\Models\SocialAccount;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
 
 class TwitterV2Publisher
 {
-    public function publish(Publication $post, PostTarget $target): string
+    public function publish(?string $text, ?string $imagePath): ?string
     {
-        $acct = SocialAccount::where('user_id', $post->user_id)
-                 ->where('provider','twitter')->firstOrFail();
+        // obtener token del usuario:
+        $account = SocialAccount::where('user_id', Auth::id())
+            ->where('provider','twitter')
+            ->first();
 
-        // OJO: si guardaste un JSON en access_token, toma el valor real
-        $token = $acct->access_token;
-        $decoded = json_decode($token, true);
-        if (is_array($decoded) && isset($decoded['access_token'])) {
-            $token = $decoded['access_token']; // usar el token real
+        if (!$account) {
+            throw new \RuntimeException('No hay cuenta de X conectada');
         }
 
-        $payload = ['text' => trim($post->content ?: $post->title)];
+        $token = $account->access_token; // si lo guardaste como string
+        // si lo guardaste JSON: $token = json_decode($account->access_token, true)['access_token'];
 
+        // 1) (opcional) subir media a X si tienes endpoint y permisos (varía por nivel del API)
+        // 2) postear tweet
         $res = Http::withToken($token)
-            ->post('https://api.twitter.com/2/tweets', $payload);
-
-        Log::info('X publish status', [
-            'status' => $res->status(),
-            'body'   => $res->body(),
-            'pub_id' => $post->id,
-        ]);
+            ->post('https://api.twitter.com/2/tweets', [
+                'text' => (string) $text,
+            ]);
 
         if (!$res->successful()) {
-            throw new \RuntimeException('X API error '.$res->status().': '.$res->body());
+            throw new \RuntimeException('X publish failed: '.$res->body());
         }
 
-        $tweetId = data_get($res->json(), 'data.id');
-        if (!$tweetId) {
-            throw new \RuntimeException('X API: missing tweet id: '.$res->body());
-        }
-
-        return $tweetId;
+        return $res->json('data.id');
     }
 }
