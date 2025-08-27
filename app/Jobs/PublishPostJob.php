@@ -16,39 +16,54 @@ class PublishPostJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $postId;
-
-    public function __construct(int $postId)
-    {
-        $this->postId = $postId;
-    }
+    public function __construct(public int $publicationId) {}
 
     public function handle(TwitterV2Publisher $twitter): void
     {
-        $post   = Publication::findOrFail($this->postId);
-        $target = PostTarget::where('publication_id', $post->id)
-                    ->where('provider','twitter')->firstOrFail();
+        $pub = Publication::with('targets')->findOrFail($this->publicationId);
 
-        try {
-            $tweetId = $twitter->publish($post, $target);
+        // Si es scheduled y aún no toca, reprogramar
+        if ($pub->scheduled_at && now('UTC')->lt($pub->scheduled_at)) {
+            $this->release($pub->scheduled_at->diffInSeconds(now('UTC')) + 5);
+            return;
+        }
 
-            $target->status = 'posted';
-            $target->provider_post_id = $tweetId;
-            $target->error = null;
-            $target->save();
+        $pub->update(['status' => 'running']);
 
-            $post->status = 'posted';
-            $post->published_at = now();
-            $post->save();
+        foreach ($pub->targets as $t) {
+            if ($t->status !== 'pending') continue;
 
-            Log::info('Tweet published', ['publication_id' => $post->id, 'tweet_id' => $tweetId]);
-        } catch (\Throwable $e) {
-            $target->status = 'failed';
-            $target->error  = substr($e->getMessage(), 0, 2000);
-            $target->save();
+            try {
+                $t->update(['status' => 'running']);
 
-            Log::error('Tweet publish failed', ['publication_id' => $post->id, 'error' => $e->getMessage()]);
-            throw $e;
+                $text = trim(($pub->title ? $pub->title."\n" : '').(string)$pub->content);
+
+                if ($t->provider === 'twitter') {
+                    $res = $twitter->tweet($text);
+                    $t->update([
+                        'provider_post_id' => $res['data']['id'] ?? null,
+                        'status'           => 'done',
+                    ]);
+                } elseif ($t->provider === 'linkedin') {
+                    // TODO: implementar publicador LinkedIn
+                    // $linkedin->post($text, $pub->image_path);
+                    $t->update(['status' => 'done']);
+                }
+            } catch (\Throwable $e) {
+                Log::error('Publish failure', ['pub'=>$pub->id,'prov'=>$t->provider,'e'=>$e->getMessage()]);
+                $t->update(['status' => 'failed','error_message'=>$e->getMessage()]);
+            }
+        }
+
+        // Si todas OK => done; si alguna falló => failed parcial
+        $fresh = $pub->refresh();
+        if ($fresh->targets()->where('status','failed')->exists()) {
+            $fresh->update(['status' => 'failed']);
+        } elseif ($fresh->targets()->whereIn('status', ['pending','running'])->exists()) {
+            // aun quedan; liberar de nuevo
+            $this->release(15);
+        } else {
+            $fresh->update(['status' => 'done']);
         }
     }
 }

@@ -7,15 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PostTarget extends Model
 {
-    // Si tu tabla se llama post_targets, no necesitas $table.
-    // protected $table = 'post_targets';
-
     protected $fillable = [
-        'publication_id',
-        'provider',
-        'status',
-        'provider_post_id',
-        'error',
+        'publication_id','provider','provider_post_id','status','error_message',
     ];
 
     public function publication(): BelongsTo
