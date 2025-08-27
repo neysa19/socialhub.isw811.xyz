@@ -8,31 +8,28 @@ use Illuminate\Support\Facades\Http;
 
 class TwitterV2Publisher
 {
-    public function publish(?string $text, ?string $imagePath): ?string
+    public function publishForUser(int $userId, string $text, ?string $imagePath = null): string
     {
-        // obtener token del usuario:
-        $account = SocialAccount::where('user_id', Auth::id())
-            ->where('provider','twitter')
+        $account = SocialAccount::where('user_id', $userId)
+            ->where('provider', 'twitter')
             ->first();
 
         if (!$account) {
             throw new \RuntimeException('No hay cuenta de X conectada');
         }
 
-        $token = $account->access_token; // si lo guardaste como string
-        // si lo guardaste JSON: $token = json_decode($account->access_token, true)['access_token'];
+        // TODO: refrescar token si hace falta usando $account->refresh_token
 
-        // 1) (opcional) subir media a X si tienes endpoint y permisos (varía por nivel del API)
-        // 2) postear tweet
-        $res = Http::withToken($token)
+        // Ejemplo muy simple de publicación (ajústalo a tu implementación real)
+        $res = Http::withToken($account->access_token)
             ->post('https://api.twitter.com/2/tweets', [
-                'text' => (string) $text,
+                'text' => $text,
             ]);
 
         if (!$res->successful()) {
-            throw new \RuntimeException('X publish failed: '.$res->body());
+            throw new \RuntimeException('X error: '.$res->body());
         }
 
-        return $res->json('data.id');
+        return (string) data_get($res->json(), 'data.id');
     }
 }

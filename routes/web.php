@@ -13,9 +13,8 @@ use App\Http\Controllers\{
     TwitterOAuth2Controller
 };
 
-
 // Redirige la raíz al dashboard
-Route::redirect('/', '/dashboard');
+Route::get('/', fn () => view('welcome'))->name('welcome');
 
 // Todo lo “de la app” va autenticado y verificado
 Route::middleware(['auth', 'verified'])->group(function () {
