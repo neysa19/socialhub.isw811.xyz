@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\{
     ProfileController,
     SocialAuthController,
@@ -11,7 +12,7 @@ use App\Http\Controllers\{
     QueueController,
     TwitterOAuth2Controller
 };
-use App\Models\SocialAccount;
+
 
 // Redirige la raíz al dashboard
 Route::redirect('/', '/dashboard');
@@ -21,9 +22,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Dashboard (una sola vez)
     Route::get('/dashboard', function () {
-        $userId = auth()->id();
-        $hasTw  = SocialAccount::where('user_id', $userId)->where('provider', 'twitter')->exists();
-        $hasLi  = SocialAccount::where('user_id', $userId)->where('provider', 'linkedin')->exists();
+        $userId = Auth::id(); // int|null
+        $hasTw  = \App\Models\SocialAccount::where('user_id', $userId)->where('provider', 'twitter')->exists();
+        $hasLi  = \App\Models\SocialAccount::where('user_id', $userId)->where('provider', 'linkedin')->exists();
 
         return view('dashboard', compact('hasTw', 'hasLi'));
     })->name('dashboard');
@@ -68,4 +69,4 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';
