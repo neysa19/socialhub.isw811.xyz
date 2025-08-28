@@ -22,13 +22,7 @@ class PublishPostJob implements ShouldQueue
     {
         $post = Publication::with('targets')->find($this->publicationId);
         if (!$post) return;
-        Log::info('JOB start', [
-            'pub_id'   => $post->id,
-            'user_id'  => $post->user_id,
-            'targets'  => $post->targets->pluck('provider', 'id')->all(),
-            'status'   => $post->status,
-            'when'     => now('UTC')->toDateTimeString(),
-        ]);
+
         try {
             foreach ($post->targets as $target) {
                 if ($target->status !== 'pending') continue;
@@ -49,7 +43,7 @@ class PublishPostJob implements ShouldQueue
                             ]);
                             break;
 
-                            // case 'linkedin': ...
+                        // case 'linkedin': ...
                     }
                 } catch (\Throwable $te) {
                     // marca SOLO el target fallido
@@ -66,6 +60,7 @@ class PublishPostJob implements ShouldQueue
                 'status' => $allOk ? 'published' : 'failed',
                 'error'  => $allOk ? null : 'Hay targets con error',
             ]);
+
         } catch (\Throwable $e) {
             Log::error('Publish error', ['id' => $post->id, 'e' => $e->getMessage()]);
             $post->update(['status' => 'failed', 'error' => $e->getMessage()]);
