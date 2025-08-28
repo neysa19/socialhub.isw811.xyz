@@ -5,6 +5,7 @@ namespace App\Services\Publish;
 
 use App\Models\SocialAccount;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class TwitterV2Publisher
 {
@@ -13,6 +14,11 @@ class TwitterV2Publisher
         $account = SocialAccount::where('user_id', $userId)
             ->where('provider', 'twitter')
             ->first();
+
+              Log::info('TW publishForUser', [
+        'user_id'=>$userId,
+        'account_found'=> (bool) $account,
+    ]);
 
         if (!$account) {
             throw new \RuntimeException('No hay cuenta de X conectada');

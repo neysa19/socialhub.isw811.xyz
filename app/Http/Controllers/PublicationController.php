@@ -32,7 +32,7 @@ class PublicationController extends Controller
             'content' => ['nullable', 'string', 'max:1000'],
             'image'   => ['nullable', 'image', 'max:2048'],
             'mode'    => ['required', Rule::in(['instant', 'queue', 'scheduled'])],
-            'scheduled_at' => ['nullable', 'date_format:Y-m-d\TH:i'],
+            'scheduled_at' => ['required_if:mode,scheduled', 'string'],
             'targets' => ['required', 'array', 'min:1'],  // ['twitter','linkedin']
         ]);
 
@@ -45,13 +45,16 @@ class PublicationController extends Controller
         $runAt = null;
 
         if ($validated['mode'] === 'scheduled') {
-            // El front manda YYYY-MM-DDTHH:mm (hora local). Guárdalo en UTC:
-            $runAt = Carbon::createFromFormat('Y-m-d\TH:i', $validated['scheduled_at'], config('app.timezone'))
-                ->utc();
+            // Normaliza: a veces llega "YYYY-MM-DD HH:mm" en vez de "YYYY-MM-DDTHH:mm"
+            $raw = trim((string) $request->input('scheduled_at'));
+            $raw = str_replace(' ', 'T', $raw);
+
+            // Parsea asumiendo la tz de tu app y guarda en UTC
+            // (evita InvalidFormatException si viene con o sin 'T')
+            $runAt = Carbon::parse($raw, config('app.timezone'))->utc();
         }
 
         if ($validated['mode'] === 'queue') {
-            // toma el último pendiente programado y añade 1 min
             $last = Publication::where('user_id', Auth::id())
                 ->whereNotNull('scheduled_at')
                 ->whereIn('status', ['pending', 'queued'])
@@ -59,8 +62,8 @@ class PublicationController extends Controller
                 ->first();
 
             $runAt = $last
-                ? $last->scheduled_at->copy()->addMinute()
-                : now()->addMinute()->utc();
+                ? $last->scheduled_at->clone()->addMinute()
+                : now('UTC')->addMinute(); // directo en UTC
         }
 
         $pub = Publication::create([
