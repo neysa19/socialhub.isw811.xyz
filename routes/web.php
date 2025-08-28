@@ -38,10 +38,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/publications',   [PublicationController::class, 'index'])->name('publications.index');
     Route::post('/publications',  [PublicationController::class, 'store'])->name('publications.store');
 
-    // Horarios
-    Route::get('/schedules',      [ScheduleController::class, 'index'])->name('schedules.index');
-    Route::post('/schedules',     [ScheduleController::class, 'store'])->name('schedules.store');
+   Route::middleware(['auth'])->group(function () {
+    Route::get('/schedules', [ScheduleController::class, 'index'])->name('schedules.index');
+    Route::post('/schedules', [ScheduleController::class, 'store'])->name('schedules.store');
     Route::delete('/schedules/{schedule}', [ScheduleController::class, 'destroy'])->name('schedules.destroy');
+});
+
 
     // Cola
     Route::get('/queue',          [QueueController::class, 'index'])->name('queue.index');

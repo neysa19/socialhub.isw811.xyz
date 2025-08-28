@@ -1,9 +1,9 @@
 <?php
 
+// app/Services/Publish/TwitterV2Publisher.php
 namespace App\Services\Publish;
 
 use App\Models\SocialAccount;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 
 class TwitterV2Publisher
@@ -18,9 +18,9 @@ class TwitterV2Publisher
             throw new \RuntimeException('No hay cuenta de X conectada');
         }
 
-        // TODO: refrescar token si hace falta usando $account->refresh_token
+        // TODO: refresh token si expira ($account->refresh_token)
 
-        // Ejemplo muy simple de publicación (ajústalo a tu implementación real)
+        // Nota: esto publica SOLO texto. Subida de media va aparte.
         $res = Http::withToken($account->access_token)
             ->post('https://api.twitter.com/2/tweets', [
                 'text' => $text,

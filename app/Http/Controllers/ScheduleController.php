@@ -1,20 +1,17 @@
 <?php
-// app/Http/Controllers/ScheduleController.php
-// app/Http/Controllers/ScheduleController.php
+
 namespace App\Http\Controllers;
 
-use App\Models\PublishSchedule;
+use App\Models\PublishSchedule;              // <— AQUÍ
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;   // <- IMPORTA ESTO
+use Illuminate\Support\Facades\Auth;
 
 class ScheduleController extends Controller
 {
     public function index()
     {
-        $userId = Auth::id();
-        $schedules = PublishSchedule::where('user_id', $userId)
-            ->orderBy('weekday')
-            ->orderBy('time')
+        $schedules = PublishSchedule::where('user_id', Auth::id())
+            ->orderBy('day')->orderBy('time')
             ->get();
 
         return view('schedules.index', compact('schedules'));
@@ -23,17 +20,13 @@ class ScheduleController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'weekday' => ['required','integer','between:0,6'],
-            'time'    => ['required','date_format:H:i'],
+            'day'  => ['required','in:Lunes,Martes,Miércoles,Jueves,Viernes,Sábado,Domingo'],
+            'time' => ['required','date_format:H:i'],
         ]);
 
         PublishSchedule::updateOrCreate(
-            [
-                'user_id' => Auth::id(),
-                'weekday' => $data['weekday'],
-                'time'    => $data['time'],
-            ],
-            []
+            ['user_id' => Auth::id(), 'day' => $data['day']],
+            ['time'    => $data['time']]
         );
 
         return back()->with('status', 'Horario guardado');

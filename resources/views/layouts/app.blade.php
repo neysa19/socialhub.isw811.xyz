@@ -8,17 +8,17 @@
 
   {{-- Parche rápido para inputs/tabla en dark mode --}}
   <style>
-    .dark input[type="text"],
-    .dark input[type="file"],
-    .dark input[type="datetime-local"],
-   .dark textarea {
-    color: #000000;            /* texto */
-    background-color: #111827; /* fondo */
-    border: 1px solid #374151; /* borde */
-  }
-  .dark textarea::placeholder {
-    color: #9ca3af;            /* placeholder */
-  }
+.dark input[type="text"],
+.dark input[type="file"],
+.dark input[type="datetime-local"],
+.dark select,
+.dark textarea{
+  color: #e5e7eb !important;         /* texto claro */
+  background-color: #111827 !important; /* fondo oscuro */
+  border: 1px solid #374151;
+}
+.dark textarea::placeholder{ color:#9ca3af; }
+
 
     .dark table { color:#e5e7eb; }
     .dark thead th {

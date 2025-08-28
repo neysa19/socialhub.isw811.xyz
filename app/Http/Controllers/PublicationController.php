@@ -19,21 +19,21 @@ class PublicationController extends Controller
             ->latest()->with('targets')->paginate(10);
 
         // lee si hay conexión activa de twitter/linkedIn (simplificado)
-        $hasTwitter  = \App\Models\SocialAccount::where('user_id', Auth::id())->where('provider','twitter')->exists();
-        $hasLinkedIn = \App\Models\SocialAccount::where('user_id', Auth::id())->where('provider','linkedin')->exists();
+        $hasTwitter  = \App\Models\SocialAccount::where('user_id', Auth::id())->where('provider', 'twitter')->exists();
+        $hasLinkedIn = \App\Models\SocialAccount::where('user_id', Auth::id())->where('provider', 'linkedin')->exists();
 
-        return view('publications.index', compact('items','hasTwitter','hasLinkedIn'));
+        return view('publications.index', compact('items', 'hasTwitter', 'hasLinkedIn'));
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'title'   => ['required','string','max:255'],
-            'content' => ['nullable','string','max:1000'],
-            'image'   => ['nullable','image','max:2048'],
-            'mode'    => ['required', Rule::in(['instant','queue','scheduled'])],
-            'scheduled_at' => ['nullable','date_format:Y-m-d\TH:i'],
-            'targets' => ['required','array','min:1'],  // ['twitter','linkedin']
+            'title'   => ['required', 'string', 'max:255'],
+            'content' => ['nullable', 'string', 'max:1000'],
+            'image'   => ['nullable', 'image', 'max:2048'],
+            'mode'    => ['required', Rule::in(['instant', 'queue', 'scheduled'])],
+            'scheduled_at' => ['nullable', 'date_format:Y-m-d\TH:i'],
+            'targets' => ['required', 'array', 'min:1'],  // ['twitter','linkedin']
         ]);
 
         $imagePath = null;
@@ -42,20 +42,25 @@ class PublicationController extends Controller
         }
 
         // calcular hora para "queue": el siguiente slot disponible
-        $scheduledAt = null;
+        $runAt = null;
+
         if ($validated['mode'] === 'scheduled') {
-            // guardamos en UTC (front manda local, ajusta si quieres)
-            $scheduledAt = Carbon::parse($validated['scheduled_at'], config('app.timezone'))
-                ->clone()->timezone('UTC');
-        } elseif ($validated['mode'] === 'queue') {
+            // El front manda YYYY-MM-DDTHH:mm (hora local). Guárdalo en UTC:
+            $runAt = Carbon::createFromFormat('Y-m-d\TH:i', $validated['scheduled_at'], config('app.timezone'))
+                ->utc();
+        }
+
+        if ($validated['mode'] === 'queue') {
+            // toma el último pendiente programado y añade 1 min
             $last = Publication::where('user_id', Auth::id())
-                ->where('status','pending')
                 ->whereNotNull('scheduled_at')
+                ->whereIn('status', ['pending', 'queued'])
                 ->orderByDesc('scheduled_at')
                 ->first();
 
-            $next = $last? $last->scheduled_at->clone()->addMinute() : now('UTC')->addMinute();
-            $scheduledAt = $next;
+            $runAt = $last
+                ? $last->scheduled_at->copy()->addMinute()
+                : now()->addMinute()->utc();
         }
 
         $pub = Publication::create([
@@ -64,8 +69,8 @@ class PublicationController extends Controller
             'content'      => $validated['content'] ?? null,
             'image_path'   => $imagePath,
             'mode'         => $validated['mode'],
-            'scheduled_at' => $scheduledAt,
-            'status'       => $validated['mode']==='instant' ? 'queued' : 'pending',
+            'scheduled_at' => $runAt,            // null para instant
+            'status'       => 'pending',         // lo actualiza el job
         ]);
 
         foreach ($validated['targets'] as $prov) {
@@ -75,11 +80,13 @@ class PublicationController extends Controller
             ]);
         }
 
+        // despachar el job según el modo
         if ($validated['mode'] === 'instant') {
-            // publica ya mismo
-            dispatch(new PublishPostJob($pub->id));
+            PublishPostJob::dispatch($pub->id);                 // ahora
+        } else {
+            PublishPostJob::dispatch($pub->id)->delay($runAt);  // programada / cola
         }
 
-        return back()->with('ok','Publicación guardada.');
+        return back()->with('ok', 'Publicación guardada.');
     }
 }
